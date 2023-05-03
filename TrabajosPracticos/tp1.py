@@ -32,22 +32,24 @@ def main():
                 os.waitpid(pid, 0)
             else: 
                 os.close(r)
-                w = os.fdopen (w, 'w') #me devuelve un objeto de archivo
-                w.write((InvertirLineas(linea)).encode())
-                w.close()
+                w = os.read(pipe, 1024)
+                os.write(w,(InvertirLineas(linea)).encode())
+                os.close(w)
                 exit(0)
         
+       
         for pipe in pipes:
-            data = os.fdopen(pipe)
-            palabra = data.readlines().decode().strip()
-            imprimir.append(palabra)
+            r = os.read(pipe, 1024)
+            data_d = r.readlines().decode().strip()
+            imprimir.append(data_d)
+            r.close()
 
     except IOError:
             print(f"No se puede abrir el archivo {args.file}")
             exit()
 
-    for palabra in imprimir:
-        print(palabra)
+    for data_d in imprimir:
+        print(data_d)
         print("\n")
 
 if __name__ == "__main__":
