@@ -43,7 +43,7 @@ def main():
             imprimir.append(palabra)
 
     except IOError:
-            print(f"No se puede abrir el archivo {args.archivo}")
+            print(f"No se puede abrir el archivo {args.file}")
             exit()
 
     for palabra in imprimir:
