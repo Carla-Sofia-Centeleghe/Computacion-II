@@ -1,0 +1,28 @@
+
+Desarrollo en serie de Taylor del seno(x):
+
+Objetivos:
+
+El ejercicio consiste en crear tantos hilos como los términos se desea calcular. 
+Luego, desde un hilo que no sea el principal, se deben sumar todos los términos calculados. 
+Al finalizar esta operación el hilo principal deberá mostrarlo por pantalla junto con la resta del valor de referencia. 
+El valor de referencia, la cantidad de términos y los puntos a evaluar disponibles a continuación:
+
+- Cantidad de términos: 12
+- x = 0.
+- Valor de referencia: 0.0
+
+- Cantidad de términos: 12
+- x = 0.7853981633974483
+- Valor de referencia: 0.7071067811865475
+
+- Cantidad de términos: 12
+- x = 1.5707963267948966
+- Valor de referencia: 1.0000000000000002
+
+- Cantidad de términos: 12
+- x = 3.141592653589793
+- Valor de referencia: -1.7028581387855716e-13
+
+#Grupo Carla S. Centeleghe y Cristian Albornoz
+#1 hilo para main, 1 hilo sumatorio y tantos hilos como teerminos
