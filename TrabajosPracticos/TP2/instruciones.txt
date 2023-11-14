@@ -1,0 +1,14 @@
+#Carla Sofia Centeleghe 2023
+# Computacion II
+
+Para hacer correr el codigo con los ejemplos que hice: 
+1. Abri una terminal 
+2. Movete para estar estar en la carpeta TP2 (usa cd, para moverte en las carpetas)
+
+Opcion 1:
+3. Ya en la terminal pone "python3 tp2.py -i 127.0.0.1 -p 8080 -f toby.jpeg"
+4. Te muestra la imajen de toby en blanco y negro 
+
+Opcion 2: 
+3. Ya en la terminal pone "python3 tp2.py -i 127.0.0.1 -p 8080 -f naruto.jpg"
+4. Te muestra la imajen de naruto en blanco y negro 
