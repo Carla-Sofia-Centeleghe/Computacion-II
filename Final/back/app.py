@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 import os
 from celery import Celery
-from model import *
 from werkzeug.utils import secure_filename
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import logging
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -17,30 +17,56 @@ def make_celery(app):
 
 celery = make_celery(app)
 
+# Configuración del logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
+    
     file = request.files['file']
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    
     file.save(filepath)
     task = classify_image.delay(filepath)
     return jsonify({"task_id": task.id}), 202
 
-@celery.task(bind=True)
-def classify_image(self, filepath):
-    model = tf.keras.models.load_model('optimized_model.h5')
+@app.route('/classify', methods=['POST'])
+def classify():
+    image_path = request.form['image_path']
+    task = classify_image.delay(image_path)
+    return jsonify({"task_id": task.id}), 202
+
+@celery.task(name='app.classify_image')
+def classify_image(filepath):
+    logger.info(f"Processing image: {filepath}")
     
-    # Preprocesar imagen y predecir
-    img = Image.open(filepath)
-    img = img.resize((224, 224))
-    img = np.array(img) / 255.0
-    img = np.expand_dims(img, axis=0)
-    
-    prediction = model.predict(img)
-    predicted_class = 'Pizza' if prediction[0] > 0.5 else 'Steak'
-    return predicted_class
+    try:
+        model = tf.keras.models.load_model('simple_cnn_model.keras')  # Usar formato Keras
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        return "Error loading model"
+
+    try:
+        img = Image.open(filepath)
+        img = img.resize((150, 150))
+        img_array = tf.keras.preprocessing.image.img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+
+        predictions = model.predict(img_array)
+        predicted_class = 'Pizza' if predictions[0] > 0.5 else 'Carne'
+        
+        logger.info(f"Predicted class: {predicted_class}")
+        return predicted_class
+    except Exception as e:
+        logger.error(f"Error processing image: {e}")
+        return "Error processing image"
 
 @app.route('/result/<task_id>')
 def get_result(task_id):

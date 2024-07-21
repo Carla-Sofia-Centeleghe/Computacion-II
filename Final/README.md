@@ -12,9 +12,9 @@ Funcionalidades:
 - E/S Asíncrona: Cada conexión cliente-servidor se maneja de forma asíncrona usando hilos, permitiendo la concurrencia.
 - Clasificación de Imágenes: El servidor utiliza una red neuronal para clasificar las imágenes y determinar si contienen gluten.
 - Colas de Tareas Distribuidas: Se utiliza Celery para paralelizar la tarea de clasificación de imágenes.
-- Almacenamiento en Base de Datos: Los datos de las conexiones y horarios se almacenan en una base de datos.
+
 - Compatibilidad con IPv4 e IPv6: El servidor maneja direcciones tanto IPv4 como IPv6.
 - Mecanismos de IPC: Se implementan colas (Queues) para gestionar el acceso de los usuarios.
-- Interfaz de Usuario: La aplicación incluye una interfaz web desarrollada en Angular para que los clientes puedan subir imágenes y ver los resultados.
+- Interfaz de Usuario: La aplicación incluye una interfaz 
 
 

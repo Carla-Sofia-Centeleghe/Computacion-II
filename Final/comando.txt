@@ -5,6 +5,8 @@ pip install -r requirements.txt # Instalar requirements
 redis-server # Activar server
 
 celery -A back.app.celery worker --loglevel=info # Activar celery
+celery -A app.celery worker --loglevel=info # Activo todo desde back
+
 
 python app.py # Inicia el servidor flask 
 

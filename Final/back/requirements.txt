@@ -1,6 +1,7 @@
 flask
 celery
 redis
+Tkinter
 #Python 3.11 
 #Angular
 TensorFlow

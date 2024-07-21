@@ -50,20 +50,20 @@ def AI():
         validation_steps=50)
 
     # Guardar el modelo
-    model.save('simple_cnn_model.h5')
+    model.save('simple_cnn_model.keras')
 
     # Usar el modelo para clasificar nuevas imágenes
-    new_image_path = '/home/carla/Documentos/GitHub/Computacion-II/Final/back/train_dir/pizza/22489.jpg'
-    img_array = tf.keras.preprocessing.image.load_img(new_image_path, target_size=(150, 150))
-    img_array = tf.keras.preprocessing.image.img_to_array(img_array)
-    img_array = tf.expand_dims(img_array, 0)
+    #new_image_path = '/home/carla/Documentos/GitHub/Computacion-II/Final/back/train_dir/pizza/22489.jpg'
+    #img_array = tf.keras.preprocessing.image.load_img(new_image_path, target_size=(150, 150))
+    #img_array = tf.keras.preprocessing.image.img_to_array(img_array)
+    #img_array = tf.expand_dims(img_array, 0)
 
-    predictions = model.predict(img_array)
-    print(predictions)
+    #predictions = model.predict(img_array)
+    #print(predictions)
 
     # Interpretar la predicción
-    predicted_class = 'Pizza' if predictions > 0.5 else 'Carne'
-    print(f'El modelo identificó: {predicted_class}')
+    #predicted_class = 'Pizza' if predictions > 0.5 else 'Carne'
+    #print(f'El modelo identificó: {predicted_class}')
 
 # Ejecutar función principal
 AI()
