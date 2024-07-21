@@ -1,0 +1,7 @@
+<div>
+    <h1>Detector de Gluten</h1>
+    <input type="file" (change)="onFileSelected($event)">
+    <button (click)="onUpload()">Subir y Analizar</button>
+    <p *ngIf="result">Resultado: {{ result }}</p>
+  </div>
+  

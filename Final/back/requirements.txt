@@ -1,0 +1,13 @@
+flask
+celery
+redis
+#Python 3.11 
+#Angular
+TensorFlow
+matplotlib
+numpy
+requests
+scipy
+ramdom 
+#zipfile
+pillow
