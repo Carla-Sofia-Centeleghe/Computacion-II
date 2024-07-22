@@ -1,14 +1,13 @@
 flask
 celery
 redis
-Tkinter
+tkinter
 #Python 3.11 
-#Angular
-TensorFlow
+tensorFlow
 matplotlib
 numpy
 requests
 scipy
 ramdom 
-#zipfile
+zipfile
 pillow

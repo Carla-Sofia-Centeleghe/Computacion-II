@@ -1,24 +1,34 @@
 import socket
-import multiprocessing
+import threading
 
-print(dir(socket))
+def handle_client(client_socket):
+    try:
+        # Recibir datos del cliente (imagen en este caso)
+        image_data = b""
+        while True:
+            packet = client_socket.recv(4096)
+            if not packet:
+                break
+            image_data += packet
 
-def handle_client(client_socket):   # Función para manejar la conexión del cliente
-    request = client_socket.recv(1024).decode()
-    print(f"Recibido: {request}")
-    client_socket.send("ACK!".encode())   # Enviar una respuesta al cliente
-    client_socket.close()    # Cerrar la conexión
+        # Procesa la imagen aquí (ej. guardarla en un archivo temporal y analizarla)
+        # Por ahora, simplemente enviamos una confirmación de recepción
+        client_socket.sendall(b"Imagen recibida y procesada")
+    except Exception as e:
+        client_socket.sendall(f"Error: {e}".encode('utf-8'))
+    finally:
+        client_socket.close()
 
-def server_loop():  # Función para iniciar el servidor
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Crear un socket 
+def server_loop():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(("0.0.0.0", 9999))
     server.listen(5)
     print("Esperando conexiones...")
-    while True:        # Bucle para aceptar conexiones
+    while True:
         client_sock, addr = server.accept()
-        print(f"Conexión aceptada de: {addr}")  
-        client_handler = multiprocessing.Process(target=handle_client, args=(client_sock,))     # Crear un proceso para manejar la conexión del cliente
-        client_handler.start()  # Iniciar el proceso
+        print(f"Conexión aceptada de: {addr}")
+        client_handler = threading.Thread(target=handle_client, args=(client_sock,))
+        client_handler.start()
 
 if __name__ == "__main__":
     server_loop()

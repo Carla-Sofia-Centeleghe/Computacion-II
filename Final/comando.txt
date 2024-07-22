@@ -1,19 +1,18 @@
 source venv/bin/activate # Activar entorno virtual
 
-pip install -r requirements.txt # Instalar requirements
-
 redis-server # Activar server
 
-celery -A back.app.celery worker --loglevel=info # Activar celery
 celery -A app.celery worker --loglevel=info # Activo todo desde back
 
+python main.py # Iniciar el servidor 
 
-python app.py # Inicia el servidor flask 
+python tkinter_app.py # Inicia la interfaz
 
-ng serve # Activo el front
+Extras Utiles:
 
 nvm use 18.19 | node -v # Para usar el Node.js correcto
 
+pip install -r requirements.txt # Instalar requirements
 
 
 
