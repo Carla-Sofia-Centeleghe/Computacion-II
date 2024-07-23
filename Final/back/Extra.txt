@@ -1,0 +1,35 @@
+¿Que es Flask?
+Flask es un framework web ligero para Python que se utiliza para desarrollar aplicaciones web. 
+Flask está construido sobre WSGI (Web Server Gateway Interface), que es una especificación para la interoperabilidad entre servidores web y aplicaciones Python. WSGI define un estándar para cómo las solicitudes y respuestas HTTP deben ser manejadas en aplicaciones web.
+Flask tiene dos metedos de concurrencia: 
+        - Sincrónico por Defecto: Flask, por defecto, maneja solicitudes de manera sincrónica. Esto significa que cada solicitud es manejada de forma secuencial, y el servidor atiende una solicitud a la vez para cada hilo o proceso. (Este es el caso de mi proyecto!)
+        - Multihilo y Multiproceso:
+            - Multihilo: Flask puede ser configurado para manejar múltiples solicitudes en paralelo utilizando múltiples hilos. Esto es posible cuando se ejecuta en servidores de desarrollo que soportan multihilo, como el servidor de desarrollo integrado en Flask (app.run(threaded=True)).
+            - Multiproceso: En un entorno de producción, Flask generalmente se ejecuta detrás de un servidor WSGI como Gunicorn o uWSGI, que puede manejar múltiples procesos para servir solicitudes concurrentemente. Estos servidores manejan la concurrencia a nivel de procesos, lo que permite que Flask maneje múltiples solicitudes simultáneamente.
+
+¿Porque usar flask en vez de sockets?
+1.Manejo de Errores y Respuestas: HTTP proporciona códigos de estado estándar que pueden ser utilizados para comunicar el estado de la solicitud (como 200 OK, 404 Not Found, 500 Internal Server Error).Ademas Flask maneja automáticamente muchos aspectos del protocolo HTTP, como el manejo de cabeceras, métodos de solicitud (GET, POST, etc.), y más.
+2.Escalabilidad y Despliegue: Las aplicaciones web basadas en HTTP son más fáciles de escalar y desplegar usando servicios como Nginx, Apache, o plataformas en la nube y se puede aprovechar los balanceadores de carga y proxies inversos para mejorar el rendimiento y la disponibilidad.
+
+Descripción del Proceso con Flask para enviar, recibir y procesar imagen:
+
+- Cliente:
+Cuando se selecciona un archivo y se hace clic en "Subir y Clasificar", el cliente lee el archivo de imagen y lo envia a http://localhost:/upload usando una solicitud HTTP POST.
+El servidor Flask recibe la imagen y devuelve un ID de tarea.
+El cliente verifica el estado de la tarea periódicamente enviando solicitudes GET a http://localhost:/result/{task_id}.
+
+-   Servidor Flask:
+Recibe la imagen a través del endpoint /upload. Es asincrónico, es decir se maneja en el mismo hilo en el que fue recibida, y el servidor no continúa procesando otras solicitudes hasta que la actual se haya completado. (Sin embargo, cuando se ejecuta Flask detrás de un servidor WSGI como Gunicorn o uWSGI en producción, puede manejar múltiples solicitudes concurrentemente mediante la utilización de múltiples procesos o hilos.)
+Inicia una tarea de procesamiento de imagen usando Celery.
+Responde con un ID de tarea que el cliente usa para verificar el estado de la tarea.
+
+-   Celery:
+La tarea enviada se coloca en una cola de tareas y es procesada de manera asincrónica, es decir que celery puede manejar múltiples tareas en paralelo sin bloquear el flujo principal de Flask.
+Guarda los resultados del procesamiento.
+Permite que el servidor Flask devuelva los resultados cuando el cliente los solicite.
+
+-   Flujo del Código:
+Cliente selecciona y envía la imagen al servidor Flask.
+Servidor Flask recibe la imagen y delega el procesamiento a Celery.
+Celery procesa la imagen y guarda el resultado.
+Cliente consulta periódicamente el estado de la tarea hasta que obtiene el resultado del procesamiento.

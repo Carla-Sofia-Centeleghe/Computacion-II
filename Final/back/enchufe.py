@@ -1,33 +1,51 @@
 import socket
-import threading
+import threading # Para manejar múltiples conexiones, multiples hilos 
+import sys 
 
-def handle_client(client_socket):
+def handle_client(client_sock):
     try:
-        # Recibir datos del cliente (imagen en este caso)
-        image_data = b""
         while True:
-            packet = client_socket.recv(4096)
-            if not packet:
+            data = client_sock.recv(1024)
+            if not data:
                 break
-            image_data += packet
-
-        client_socket.sendall(b"Imagen recibida y procesada")
-    except Exception as e:
-        client_socket.sendall(f"Error: {e}".encode('utf-8'))
+            print(f"Mensaje del cliente: {data.decode()}")
     finally:
-        client_socket.close()
+        client_sock.close()
 
-def server_loop():      #Solo IP4 por ahora
-    # Crear socket para IP
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", 9999))      #Cambiar por (("::", 9999))
-    server.listen(5)
+def server_loop():     
+    HOST = None  # Significa todas las interfaces disponibles
+    PORT = 9999  # Puerto para escuchar 
+    
+    # Intenta crear un socket para cada dirección disponible y usar el primero que funcione
+    # Uso de socket.getaddrinfo para soportar IPv4 e IPv6, ademas de sockt no especificado
+    for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+        af, socktype, proto, canonname, sa = res
+        try:
+            s = socket.socket(af, socktype, proto)
+        except OSError as msg:
+            print(f"Error al crear el socket: {msg}")
+            continue
+        try:
+            s.bind(sa)
+            s.listen(5)
+            print(f"Servidor escuchando en {sa}")
+            break  # El socket fue creado exitosamente
+        except OSError as msg:
+            print(f"Error al abrir el socket: {msg}")
+            s.close()
+            continue
+    
+    if s is None:
+        print('No se pudo abrir el socket')
+        sys.exit(1)
+    
     print("Esperando conexiones...")
+    
     while True:
-        client_sock, addr = server.accept()
-        print(f"Conexión aceptada de: {addr}")
-        client_handler = threading.Thread(target=handle_client, args=(client_sock,))
-        client_handler.start()
+        client_sock, addr = s.accept()
+        print(f"Aceptada conexión desde: {addr}")
+        threading.Thread(target=handle_client, args=(client_sock,)).start()
 
 if __name__ == "__main__":
     server_loop()
+    handle_client()

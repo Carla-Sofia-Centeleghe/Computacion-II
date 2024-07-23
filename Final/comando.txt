@@ -8,7 +8,12 @@ python main.py # Iniciar el servidor
 
 python tkinter_app.py # Inicia la interfaz
 
+redis-cli lrange logs 0 -1 # Listará todos los logs almacenados en Redis
+
+
 Extras Utiles:
+
+sudo lsof -i :6379 # Listará PID, USER y TYPE en los puertos corespondientes
 
 nvm use 18.19 | node -v # Para usar el Node.js correcto
 

@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import logging
+from tkinter_app import RedisHandler
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -18,8 +19,14 @@ def make_celery(app):
 celery = make_celery(app)
 
 # Configuración del logger
-logging.basicConfig(level=logging.INFO)
+redis_handler = RedisHandler()
+redis_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+redis_handler.setFormatter(formatter)
+
 logger = logging.getLogger(__name__)
+logger.addHandler(redis_handler)
+logger.setLevel(logging.INFO)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
