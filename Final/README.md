@@ -5,7 +5,7 @@ Computacion 2 FINAL
 
 Descripción del Proyecto:
 
-El proyecto consiste en una aplicación que permite a los clientes subir imágenes de comidas (carne o pizza) y el servidor responderá cual comida es.La aplicación utiliza una red neuronal de clasificación convuncional para distinguir entre carne y pizza.La arquitectura del proyecto es cliente-servidor e incluye el uso de sockets, mecanismos de IPC, colas de tareas distribuidas, intefaz en tking que utilia sockets, procesamiento de imagenes y Celery para resolver tareas en paralelo.
+El proyecto consiste en una aplicación que permite a los clientes subir imágenes de comidas (carne o pizza) y el servidor responderá cual comida es.La aplicación utiliza una red neuronal de clasificación convuncional para distinguir entre carne y pizza.La arquitectura del proyecto es cliente-servidor e incluye el uso de sockets, mecanismos de IPC, tareas distribuidas con celery, intefaz en tking que utilia sockets, procesamiento de imagenes y Celery para resolver tareas en paralelo.
 
 Funcionalidades:
 - Cliente-Servidor con Sockets: Los clientes se conectan al servidor utilizando sockets para enviar imágenes y recibir resultados.

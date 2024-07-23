@@ -11,17 +11,16 @@ def handle_client(client_socket):
                 break
             image_data += packet
 
-        # Procesa la imagen aquí (ej. guardarla en un archivo temporal y analizarla)
-        # Por ahora, simplemente enviamos una confirmación de recepción
         client_socket.sendall(b"Imagen recibida y procesada")
     except Exception as e:
         client_socket.sendall(f"Error: {e}".encode('utf-8'))
     finally:
         client_socket.close()
 
-def server_loop():
+def server_loop():      #Solo IP4 por ahora
+    # Crear socket para IP
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", 9999))
+    server.bind(("0.0.0.0", 9999))      #Cambiar por (("::", 9999))
     server.listen(5)
     print("Esperando conexiones...")
     while True:
