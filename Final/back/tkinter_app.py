@@ -10,7 +10,6 @@ from PIL import Image, ImageTk
 
 class App:
     def __init__(self):
-        #self.root = tk.Tk()
         self.successful_connection = self.connect_to_server()
         if self.successful_connection:
             self.root = tk.Tk()
@@ -19,7 +18,6 @@ class App:
     def connect_to_server(self):
         self.server_ip = 'localhost'
         self.server_port = 9999
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         for res in socket.getaddrinfo(self.server_ip, self.server_port, socket.AF_UNSPEC, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
@@ -32,8 +30,6 @@ class App:
                 self.socket.close()
         messagebox.showerror("Error", "No se pudo conectar al servidor.")
         return False  # Conexión fallida
-    
-
     
     # Configuración de la interfaz de Tkinter 
 class Event:
@@ -150,4 +146,3 @@ class RedisHandler(logging.Handler):
 
 if __name__ == "__main__":
     app = App()
-    #rendis_handler = RedisHandler()
