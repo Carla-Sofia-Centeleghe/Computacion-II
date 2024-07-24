@@ -32,6 +32,9 @@ class App:
                 self.socket.close()
         messagebox.showerror("Error", "No se pudo conectar al servidor.")
         return False  # Conexión fallida
+    
+
+    
     # Configuración de la interfaz de Tkinter 
 class Event:
         def __init__(self, root):
@@ -110,7 +113,7 @@ class Event:
 
 class RedisHandler(logging.Handler):
     def __init__(self, host='localhost', port=6379, db=0, channel='logs', server_host='localhost', server_port=9999):
-        logging.Handler.__init__(self)
+        super().__init__() #(self)
         self.client = redis.StrictRedis(host=host, port=port, db=db)
         self.channel = channel
         
@@ -119,11 +122,11 @@ class RedisHandler(logging.Handler):
         self.server_port = server_port
         self.server_socket = self.connect_to_server()
 
-    def connect_to_server(self,log_entry):
+    def connect_to_server(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((self.server_host, self.server_port))
-            s.sendall(log_entry.encode())
+            #s.sendall(log_entry.encode())
             return s
         except Exception as e:
             print(f"Error al conectar con el servidor: {e}")
@@ -134,20 +137,17 @@ class RedisHandler(logging.Handler):
         self.client.rpush(self.channel, log_entry)
         # Crear hilo para enviar el log al servidor
         threading.Thread(target=self.send_log_to_server, args=(log_entry,)).start()
-        
-        if self.server_socket:
+
+    def send_log_to_server(self, log_entry):
+        server_socket = self.connect_to_server()
+        if server_socket:
             try:
-                self.server_socket.sendall('Los logs están almacenados en Redis'.encode('utf-8'))
-                print("Los logs están almacenados en RENDIS")
+                server_socket.sendall(f'Log guardado: {log_entry}'.encode('utf-8'))
             except Exception as e:
                 print(f"Error al enviar mensaje al servidor: {e}")
-
-    def close(self):
-        if self.server_socket:
-            self.server_socket.close()
-        super().close()
-
+            finally:
+                server_socket.close()
 
 if __name__ == "__main__":
     app = App()
-    rendis_handler = RedisHandler()
+    #rendis_handler = RedisHandler()

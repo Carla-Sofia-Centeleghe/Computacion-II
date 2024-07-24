@@ -42,17 +42,19 @@ def upload_file():
     
     file.save(filepath)
     task = classify_image.delay(filepath)
+    logger.info(f"Carpeta POST: {task.id}")
     return jsonify({"task_id": task.id}), 202
 
 @app.route('/classify', methods=['POST'])
 def classify():
     image_path = request.form['image_path']
+    
     task = classify_image.delay(image_path)
     return jsonify({"task_id": task.id}), 202
 
 @celery.task(name='app.classify_image')
 def classify_image(filepath):
-    logger.info(f"Processing image: {filepath}")
+    logger.info(f"Procesando imagen: {filepath}")
     
     try:
         model = tf.keras.models.load_model('simple_cnn_model.keras')  # Usar formato Keras
@@ -69,7 +71,7 @@ def classify_image(filepath):
         predictions = model.predict(img_array)
         predicted_class = 'Pizza' if predictions[0] > 0.5 else 'Carne'
         
-        logger.info(f"Predicted class: {predicted_class}")
+        logger.info(f"Prediccion de comida: {predicted_class}")
         return predicted_class
     except Exception as e:
         logger.error(f"Error processing image: {e}")
@@ -78,6 +80,7 @@ def classify_image(filepath):
 @app.route('/result/<task_id>')
 def get_result(task_id):
     task = classify_image.AsyncResult(task_id)
+    logger.info(f"Estado de la tarea GET: {task.state}")
     if task.state == 'PENDING':
         response = {
             'state': task.state,

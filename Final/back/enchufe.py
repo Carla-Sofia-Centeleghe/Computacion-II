@@ -8,7 +8,7 @@ def handle_client(client_sock):
             data = client_sock.recv(1024)
             if not data:
                 break
-            print(f"Mensaje del cliente: {data.decode()}")
+            print(f"Mensaje: {data.decode()}")
     finally:
         client_sock.close()
 
@@ -48,4 +48,4 @@ def server_loop():
 
 if __name__ == "__main__":
     server_loop()
-    handle_client()
+    #handle_client()
