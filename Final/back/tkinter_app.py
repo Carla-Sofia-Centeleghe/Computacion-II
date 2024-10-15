@@ -1,148 +1,127 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
-from tkinter import ttk 
-import requests
-import socket
 import threading
-import redis
-import logging
+import tkinter as tk
+from tkinter import Tk, filedialog, Label, Button, ttk, messagebox, Canvas, PhotoImage
 from PIL import Image, ImageTk
+import socket
+import os
+from enchufe import classify_image_task
+#import logging
 
-class App:
-    def __init__(self):
-        self.successful_connection = self.connect_to_server()
-        if self.successful_connection:
-            self.root = tk.Tk()
-            self.event_interface = Event(self.root)
-            self.root.mainloop()
-    def connect_to_server(self):
-        self.server_ip = 'localhost'
-        self.server_port = 9999
-        for res in socket.getaddrinfo(self.server_ip, self.server_port, socket.AF_UNSPEC, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.socket = socket.socket(af, socktype, proto)
-                self.socket.connect(sa)
-                print("Conectado al servidor")
-                return True  # Conexión exitosa
-            except OSError as e:
-                print(f"No se pudo conectar al servidor: {e}")
-                self.socket.close()
-        messagebox.showerror("Error", "No se pudo conectar al servidor.")
-        return False  # Conexión fallida
-    
-    # Configuración de la interfaz de Tkinter 
-class Event:
-        def __init__(self, root):
-            self.root = root
-            self.root.title("Food Detector")
-            frame = tk.Frame(root, padx=10, pady=10)
-            frame.pack(padx=10, pady=10)
+#logging.basicConfig(level=logging.INFO)
+#logger = logging.getLogger(__name__) 
+from celery_config import log 
+logger = log 
 
-            self.file_label = tk.Label(frame, text="No se ha seleccionado un archivo", width=50)
-            self.file_label.pack(pady=(0, 10))
+class FoodDetectorApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Detector de Comida")
+        self.root.geometry("400x500")
 
-            select_button = tk.Button(frame, text="Seleccionar archivo", command=self.select_file)
-            select_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.label = Label(root, text="Por favor, seleccione un archivo", font=("Arial", 12))
+        self.label.pack(pady=10)
 
-            upload_button = tk.Button(frame, text="Subir y Clasificar", command=self.upload_file)
-            upload_button.pack(side=tk.RIGHT)
-            
-        def select_file(self):
-            file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png")])
-            if file_path:
-                self.file_label.config(text=file_path)
-                self.show_image(file_path)
-            else:
-                self.file_label.config(text="No se ha seleccionado un archivo")
+        self.image_label = Label(root)  # Mostrar la imagen
+        self.image_label.pack(pady=10)
 
-        def show_image(self, file_path):
-            image = Image.open(file_path)
-            #image = image.resize((300, 450), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(image)
-            self.file_label.config(image=photo)
-            self.file_label.image = photo
+        self.progress = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
+        self.progress.pack(pady=10)
 
-        def upload_file(self):
-            file_path = self.file_label.cget("text")
-            if file_path == "No se ha seleccionado un archivo":
-                messagebox.showerror("Error", "Por favor selecciona primero un archivo")
-                return
-            url = 'http://localhost:5000/upload'  # URL del servidor Flask
-            try:
-                with open(file_path, 'rb') as file:
-                    files = {'file': file}
-                    response = requests.post(url, files=files)
-                    response.raise_for_status()
-                    task_id = response.json().get("task_id")
-                    if task_id:
-                        self.check_result(task_id)
-                    else:
-                        messagebox.showerror("Error", "No se pudo obtener el ID de la tarea")
-            except requests.exceptions.RequestException as e:
-                messagebox.showerror("Error", f"No se pudo cargar el archivo: {e}")
+        self.select_button = Button(root, text="Seleccionar Archivo", command=self.select_file)
+        self.select_button.pack(pady=5)
 
-        def check_result(self,task_id):
-            url = f'http://localhost:5000/result/{task_id}'
+        self.upload_button = Button(root, text="Subir y Clasificar", command=self.upload_and_classify)
+        self.upload_button.pack(pady=5)
 
-            # Crear barra de progreso, porqué la clasificación puede tardar timpo
-            # La barra de progeso aparece DOS p**tas veces, PREGUNTAR AL PROFE
-            self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=200, mode="indeterminate")
-            self.progress_bar.pack(pady=(0, 20)) 
-            self.progress_bar.start()
+        self.file_path = None
+        self.classified_image_label = Label(root)  # Mostrar la imagen clasificada
+        self.classified_image_label.pack(pady=10)
 
-            try:
-                response = requests.get(url)
-                response.raise_for_status()
-                result = response.json()
-                if result['state'] == 'PENDING':
-                    self.root.after(2000, lambda: self.check_result(task_id))  # Verifica el estado cada 2 segundos
-                else:
-                    # Finaliza la barra de progreso, igual la muy HPD no se cierra, PREGUNTAR AL PROFE
-                    try:
-                        self.progress_bar.stop()
-                        self.progress_bar.destroy()
-                    finally:        # Muestar el resultado
-                        messagebox.showinfo("Resultado", f"Resultado de la Clasificación: {result.get('result', 'Desconocido')}")
-            except requests.exceptions.RequestException as e:
-                messagebox.showerror("Error", f"No se pudo obtener el resultado: {e}")
+    def select_file(self):
+        self.file_path = filedialog.askopenfilename()
+        if self.file_path:
+            self.label.config(text=f"Archivo seleccionado: {os.path.basename(self.file_path)}")
+            logger(f"Archivo seleccionado: {self.file_path}")
+            self.preview_image()  # Previsualizar la imagen
+        else:
+            self.label.config(text="No se ha seleccionado ningún archivo")
+            logger("No se seleccionó ningún archivo.")
 
-class RedisHandler(logging.Handler):
-    def __init__(self, host='localhost', port=6379, db=0, channel='logs', server_host='localhost', server_port=9999):
-        super().__init__() #(self)
-        self.client = redis.StrictRedis(host=host, port=port, db=db)
-        self.channel = channel
-        
-        # Configuración del socket para enviar mensajes al servidor
-        self.server_host = server_host
-        self.server_port = server_port
-        self.server_socket = self.connect_to_server()
-
-    def connect_to_server(self):
+    def preview_image(self):
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((self.server_host, self.server_port))
-            #s.sendall(log_entry.encode())
-            return s
+            img = Image.open(self.file_path)
+            img = img.resize((150, 150))  # Cambiar el tamaño de la imagen para la previsualización
+            img_tk = ImageTk.PhotoImage(img)
+            self.image_label.config(image=img_tk)
+            self.image_label.image = img_tk  # Mantener una referencia de la imagen
         except Exception as e:
-            print(f"Error al conectar con el servidor: {e}")
-            return None
+            messagebox.showerror("Error", f"Error al cargar la imagen: {e}")
+            logger(f"Error al cargar la imagen: {e}")
 
-    def emit(self, record):
-        log_entry = self.format(record)
-        self.client.rpush(self.channel, log_entry)
-        # Crear hilo para enviar el log al servidor
-        threading.Thread(target=self.send_log_to_server, args=(log_entry,)).start()
+    def upload_and_classify(self):
+        if not self.file_path:
+            messagebox.showerror("Error", "No se ha seleccionado ningún archivo")
+            logger("Intento de clasificación sin seleccionar archivo.")
+            return
+        
+        if not os.path.exists(self.file_path):
+            messagebox.showerror("Error", "El archivo no se ha encontrado")
+            logger(f"Archivo no encontrado: {self.file_path}")
+            return
+        
+        # Inicia la barra de progreso
+        self.progress["value"] = 0
+        self.root.update_idletasks()
 
-    def send_log_to_server(self, log_entry):
-        server_socket = self.connect_to_server()
-        if server_socket:
-            try:
-                server_socket.sendall(f'Log guardado: {log_entry}'.encode('utf-8'))
-            except Exception as e:
-                print(f"Error al enviar mensaje al servidor: {e}")
-            finally:
-                server_socket.close()
+        # Hilo para manejar la conexión con el servidor
+        threading.Thread(target=self.send_image_to_server, daemon=True).start()
+
+    def send_image_to_server(self):
+        try:
+            self.progress["value"] = 20
+            self.root.update_idletasks()
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(('127.0.0.1', 9999))  # Cambiar IP según sea necesario
+                s.send(self.file_path.encode())
+
+                self.progress["value"] = 50
+                self.root.update_idletasks()
+
+                # Recibe la respuesta con el ID de tarea
+                task_id = s.recv(1024).decode()
+                self.progress["value"] = 100
+                self.root.update_idletasks()
+
+                messagebox.showinfo("Tarea enviada", f"ID de la tarea: {task_id}", "Resultado", f"Clasificación: {classify_image_task.result}")
+                logger(f"Clasificación recibida: {classify_image_task.result}")
+                logger(f"ID de tarea recibido: {task_id}")
+
+                 # Mostrar imagen de clasificación
+                self.display_classified_image(classify_image_task.result)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error en la conexión: {e}")
+            logger(f"Error en la conexión con el servidor: {e}")
+        finally:
+            self.progress["value"] = 0
+            self.root.update_idletasks()
+
+    def display_classified_image(self, classification):
+        # Cargar y mostrar la imagen según la clasificación
+        classified_img_path = "pizza_image.png" if classification == "Pizza" else "carne_image.png"
+        try:
+            img = Image.open(classified_img_path)
+            img = img.resize((150, 150))  # Cambiar el tamaño de la imagen para la visualización
+            img_tk = ImageTk.PhotoImage(img)
+            self.classified_image_label.config(image=img_tk)
+            self.classified_image_label.image = img_tk  # Mantener una referencia de la imagen
+            self.classified_image_label.pack()
+        except Exception as e:
+            logger(f"Error al cargar la imagen de clasificación: {e}")
 
 if __name__ == "__main__":
-    app = App()
+    root = Tk()
+    app = FoodDetectorApp(root)
+    root.mainloop()
+ 

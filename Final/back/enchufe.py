@@ -1,19 +1,57 @@
 import socket
 import threading # Para manejar múltiples conexiones, multiples hilos 
-import sys 
+import sys # Para manejar errores
+import os
+from tensorflow import keras # type: ignore
+import tensorflow as tf # type: ignore
+from PIL import Image
+import numpy as np
+from celery_config import celery
+from celery_config import log 
+from werkzeug.utils import secure_filename
 
 def handle_client(client_sock):
     try:
         while True:
             data = client_sock.recv(1024)
             if not data:
-                break
-            print(f"Mensaje: {data.decode()}")
+                log("No se recibió ningún dato del cliente.")
+                return
+
+            # Aquí debes recibir la imagen, procesarla y devolver el resultado
+            file_path = data.decode()
+            log(f"Archivo recibido: {file_path}")
+            if os.path.exists(file_path):
+            # Enviar tarea a Celery
+                result = classify_image_task.delay(file_path)
+                client_sock.send(f"Tarea enviada a Celery con ID: {result.id}".encode())
+                log(f"Tarea enviada a Celery con ID: {result.id}")
+            else:
+                client_sock.send("File not found".encode())
+                log(f"Archivo no encontrado: {file_path}")
+    except Exception as e:
+        log(f"Error al procesar cliente: {e}")
     finally:
         client_sock.close()
 
+# Función de clasificación de imagen que será ejecutada por Celery
+@celery.task(name="app.classify_image")
+def classify_image_task(filepath):
+    try:
+        model = keras.models.load_model('simple_cnn_model.keras')
+        img = Image.open(filepath)
+        img = img.resize((150, 150))
+        img_array = np.expand_dims(np.array(img), axis=0)
+        predictions = model.predict(img_array)
+        result = 'Pizza' if predictions[0] > 0.5 else 'Carne'
+        log(f"Resultado de clasificación: {result}")
+        return result
+    except Exception as e:
+        log(f"Error al procesar la imagen: {e}")
+        return f"Error processing image: {e}"
+    
 def server_loop():     
-    HOST = None  # Significa todas las interfaces disponibles
+    HOST = '0.0.0.0' # Significa todas las interfaces disponibles
     PORT = 9999  # Puerto para escuchar 
     
     # Intenta crear un socket para cada dirección disponible y usar el primero que funcione
@@ -48,4 +86,3 @@ def server_loop():
 
 if __name__ == "__main__":
     server_loop()
-    #handle_client()

@@ -1,12 +1,12 @@
 #Arquitectura General del Proyecto:
 
-- Servidor: Flask para manejar peticiones HTTP.
+- Servidor: Donde se procesan las peticiones del cliente
 
-- Sockets e interfaz: Para la comunicación en tiempo real entre clientes y servidor. Se utiliza en la interfaz grafica de tkinter
+- Interfaz: Para la comunicación en tiempo real entre clientes y servidor, se utiliza en la interfaz grafica
 
-- Sockets y logs: Los logs de Flask y Celery se guardan en Redis y tambien le mandan un mensaje (cada log, un nuevo hilo) a server de socket 
+- Logs: Los logs de se guardan y tambien le mandan un mensaje (cada log, un nuevo hilo) al server 
 
-- IPC: Usar colas de mensajes o pipes.
+- IPv4 e IPV6: permite las coneciones del cliente
 
 - Colas de tareas distribuidas: Usar Celery con un broker "Redis" 
 
