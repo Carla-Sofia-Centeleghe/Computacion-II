@@ -2,7 +2,7 @@ source venv/bin/activate # Activar entorno virtual
 
 redis-server # Activar server
 
-celery -A app.celery worker --loglevel=info # Activo todo desde back
+celery -A celery_app worker --loglevel=info # Activo todo desde back
 
 python main.py # Iniciar el servidor 
 

@@ -4,12 +4,12 @@ from tkinter import Tk, filedialog, Label, Button, ttk, messagebox, Canvas, Phot
 from PIL import Image, ImageTk
 import socket
 import os
-from enchufe import classify_image_task
+from celery_app import classify_image_task
 #import logging
 
 #logging.basicConfig(level=logging.INFO)
 #logger = logging.getLogger(__name__) 
-from celery_config import log 
+from celery_app import log 
 logger = log 
 
 class FoodDetectorApp:

@@ -1,13 +1,15 @@
 flask
 celery
 redis
-tkinter
+#tkinter
 #Python 3.11 
-tensorFlow
+#tensorFlow
 matplotlib
 numpy
 requests
 scipy
 ramdom 
-zipfile
+#zipfile
 pillow
+pytz
+cv2
