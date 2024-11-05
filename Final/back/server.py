@@ -30,6 +30,7 @@ def main(args):
 
     ADDR2 = ("", PORT)
     server_ipv6 = socket.create_server(ADDR2, family=socket.AF_INET6, dualstack_ipv6=True)
+    server_ipv6.bind(ADDR)
 
     SERVER=socket.gethostbyname(socket.gethostname())
     ADDR=(SERVER,5051)
