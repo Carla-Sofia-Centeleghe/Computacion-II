@@ -6,16 +6,16 @@ import uuid # Importamos la librería uuid para generar un identificador único
 import celery
 #import cv2 # Importamos la librería cv2 para procesar imágenes
 import argparse
+from celery_app import classify_image_task, log 
 import keras #tpye: ignore
 from PIL import Image
 import numpy as np
 
-from celery_app import classify_image_task # Importamos la tarea de Celery para clasificar imágenes 
 from querys import consulta
 from celery_app import log 
 
-from cliente_IPV4 import start_server
-from cliente_IPV6 import start_server
+#from cliente_IPV4 import start_server
+#from cliente_IPV6 import start_server
 from celery import Celery
 
 # Función para manejar la conexión con el cliente
@@ -76,7 +76,10 @@ def handle_client(conn, addr, HEADER, FORMAT, DISCONNECT_MESSAGE):
     
 
 # Función de clasificación de imagen que será ejecutada por Celery
-@celery.app.task(name="app.classify_image")
+# Configuración de Celery
+celery_app = Celery('tasks', broker='redis://localhost:6379')
+
+@celery_app.task(name="app.classify_image")
 def classify_image_task(filepath):
     try:
         model = keras.models.load_model('simple_cnn_model.keras')
