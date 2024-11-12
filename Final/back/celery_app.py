@@ -24,6 +24,7 @@ app.conf.update(
 # Configuramos el logger de Celery
 celery_log = logging.getLogger('celery_logger')
 celery_log.setLevel(logging.INFO)
+redis_cli = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 # Configuramos la tarea de celery
 @app.task(name='classify_image_task')

@@ -1,13 +1,17 @@
+import os
 import socket
 import threading
 import uuid
 import argparse
 from querys import consulta
-from celery_app import classify_image_task, app
+from celery_app import classify_image_task
+from celery_app import log 
 from multiprocessing import Queue
 from querys import consulta
 
 result_queue = Queue()
+logger = log 
+
 
 DISCONNECT_MESSAGE = b"DISCONNECT"  # Utilizamos bytes para DISCONNECT_MESSAGE
 parser=argparse.ArgumentParser()
@@ -21,10 +25,6 @@ PORT = args.x
 FORMAT = args.z
 SERVER = socket.gethostbyname(socket.gethostname())
 
-@app.task
-def classify_image_task(image_bytes):
-    return classify_image_task.result           # Resultado de la clasificación
-
 def handle_client(conn, addr, access):
     connected = True
     id_con = uuid.uuid1().int
@@ -37,7 +37,7 @@ def handle_client(conn, addr, access):
             if msg_type == DISCONNECT_MESSAGE.decode(FORMAT):
                 conn.send(b"Disconnect".encode(FORMAT))
                 conn.close()
-                semaphore.release()
+                semaphore.release()         # Libera el semaforo para permitir otra conexion
                 connected = False
                 break
             
@@ -51,27 +51,23 @@ def handle_client(conn, addr, access):
             # Manejar diferentes tipos de mensajes
             if msg_type == "I":
                 # Mensaje de imagen
-                image_length = int(conn.recv(HEADER).decode(FORMAT))
-                image_bytes = b""
-                while len(image_bytes) < image_length:
-                    packet = conn.recv(2048)
-                    if not packet:
-                        break
-                    image_bytes += packet
+                filepath_length = int(conn.recv(HEADER).decode(FORMAT))
+                filepath = conn.recv(filepath_length).decode(FORMAT)
                 
-                if len(image_bytes) != image_length:
-                    print("Error al recibir la imagen completa")
+                if not os.path.exists(filepath):
+                    conn.send("Archivo no encontrado".encode(FORMAT))
+                    logger(f"Archivo no encontrado: {filepath}")
                     continue
                 
-                print("Imagen recibida, procesando...")
+                print("Ruta de archivo recibida, procesando...")
+                logger(f"Archivo seleccionado: {filepath}")
                 
-                result = classify_image_task.apply_async(args=[image_bytes])
+                result = classify_image_task.apply_async(args=[filepath])
                 result_queue.put(result)
 
-                print("El resultado de calificacion es:"(result))
-                
                 classification = result.get(timeout=10)
                 conn.send(classification.encode(FORMAT))
+                logger(f"Clasificación recibida: {classification}")
             elif msg_type == "T":
                 # Mensaje de texto
                 message = conn.recv(int(conn.recv(HEADER).decode(FORMAT))).decode(FORMAT)
@@ -86,22 +82,25 @@ semaphore=threading.BoundedSemaphore(2)  # Define semaforo para controlar la can
 
 ADDR2 = ("", PORT)
 server_ipv6 = socket.create_server(ADDR2, family=socket.AF_INET6, dualstack_ipv6=True)
-
+SERVER=socket.gethostbyname(socket.gethostname())
+ 
 SERVER=socket.gethostbyname(socket.gethostname())
 ADDR=(SERVER,PORT)
     
 server_ipv4=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-#server_ipv4.bind(ADDR)           
+#server_ipv4.bind(ADDR)        
         
 def start_server():
     print("Servidor escuchando...")
-    server_ipv4.setblocking(0)
+    logger("Servidor escuchando...")
     server_ipv6.setblocking(0)
-    server_ipv4.listen()
     server_ipv6.listen()
+    server_ipv4.setblocking(0)
+    server_ipv4.listen()
 
     while True:
+
         try:
             conn_ipv4, addr_ipv4 = server_ipv4.accept()
             print(f"Nuevo cliente IPv4 conectado. Direccion {addr_ipv4}")
@@ -109,10 +108,10 @@ def start_server():
             threading.Thread(target=handle_client, args=(conn_ipv4, addr_ipv4, access)).start()
         except:
             pass
-
         try:
             conn_ipv6, addr_ipv6 = server_ipv6.accept()
             print(f"Nuevo cliente IPv6 conectado. Direccion {addr_ipv6}")
+            logger(f"Nuevo cliente IPv6 conectado. Direccion {addr_ipv6}")
             access = semaphore.acquire(blocking=False)
             threading.Thread(target=handle_client, args=(conn_ipv6, addr_ipv6, access)).start()
         except:
@@ -121,7 +120,6 @@ def start_server():
 
 start_server()
     
-
 def main(args):
     global PORT, DISCONNECT_MESSAGE, FORMAT
     PORT = args.x
