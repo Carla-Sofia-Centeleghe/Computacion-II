@@ -7,23 +7,15 @@ from querys import consulta
 from celery_app import classify_image_task
 from celery_app import log 
 from multiprocessing import Queue
-from querys import consulta
 
 result_queue = Queue()
 logger = log 
 
-
-DISCONNECT_MESSAGE = b"DISCONNECT"  # Utilizamos bytes para DISCONNECT_MESSAGE
-parser=argparse.ArgumentParser()
-parser.add_argument('--x',type=int,default=8080,help='Numero de puerto')
-parser.add_argument('--y',type=str,default='quit',help='Mensaje de desconexion')
-parser.add_argument('--z',type=str,default='utf-8',help='Formato de codificacion')
-args=parser.parse_args()
-
-HEADER = 64
-PORT = args.x
-FORMAT = args.z
+# Configuración inicial
+semaphore = threading.Semaphore(2)  # Limitar el número máximo de conexiones simultáneas
 SERVER = socket.gethostbyname(socket.gethostname())
+DISCONNECT_MESSAGE = b"disconnect"
+
 
 def handle_client(conn, addr, access):
     connected = True
@@ -33,7 +25,7 @@ def handle_client(conn, addr, access):
     
     while connected:
         try:
-            msg_type = conn.recv(1).decode(FORMAT)
+            msg_type = conn.recv(100).decode(FORMAT)
             if msg_type == DISCONNECT_MESSAGE.decode(FORMAT):
                 conn.send(b"Disconnect".encode(FORMAT))
                 conn.close()
@@ -67,6 +59,7 @@ def handle_client(conn, addr, access):
 
                 classification = result.get(timeout=10)
                 conn.send(classification.encode(FORMAT))
+                print(f"Clasificación enviada al cliente: {classification}")
                 logger(f"Clasificación recibida: {classification}")
             elif msg_type == "T":
                 # Mensaje de texto
@@ -78,54 +71,66 @@ def handle_client(conn, addr, access):
             conn.close()
             break
 
-semaphore=threading.BoundedSemaphore(2)  # Define semaforo para controlar la cantidad de conexiones, maximo 2 
-
-ADDR2 = ("", PORT)
-server_ipv6 = socket.create_server(ADDR2, family=socket.AF_INET6, dualstack_ipv6=True)
-SERVER=socket.gethostbyname(socket.gethostname())
- 
-SERVER=socket.gethostbyname(socket.gethostname())
-ADDR=(SERVER,PORT)
-    
-server_ipv4=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-
-#server_ipv4.bind(ADDR)        
-        
 def start_server():
-    print("Servidor escuchando...")
-    logger("Servidor escuchando...")
-    server_ipv6.setblocking(0)
-    server_ipv6.listen()
-    server_ipv4.setblocking(0)
-    server_ipv4.listen()
+    host = None  # Symbolic name meaning all available interfaces
 
-    while True:
-
+    for res in socket.getaddrinfo(host, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+        af, socktype, proto, canonname, sa = res
         try:
-            conn_ipv4, addr_ipv4 = server_ipv4.accept()
-            print(f"Nuevo cliente IPv4 conectado. Direccion {addr_ipv4}")
-            access = semaphore.acquire(blocking=False)
-            threading.Thread(target=handle_client, args=(conn_ipv4, addr_ipv4, access)).start()
-        except:
-            pass
-        try:
-            conn_ipv6, addr_ipv6 = server_ipv6.accept()
-            print(f"Nuevo cliente IPv6 conectado. Direccion {addr_ipv6}")
-            logger(f"Nuevo cliente IPv6 conectado. Direccion {addr_ipv6}")
-            access = semaphore.acquire(blocking=False)
-            threading.Thread(target=handle_client, args=(conn_ipv6, addr_ipv6, access)).start()
-        except:
-            pass
+            s = None
+            for l in ['IPv6', 'IPv4']:
+                if af == socket.AF_INET6:
+                    addr = ('::', 0)  # IPv6
+                elif af == socket.AF_INET:
+                    addr = ('', PORT)  # IPv4
+                else:
+                    continue
 
+                try:
+                    s = socket.socket(af, socktype, proto)
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    s.bind(addr)
+                    s.listen(1)
+                    print(f'Servidor escuchando en {addr}')
+                    logger(f'Servidor escuchando en {addr}')
 
-start_server()
-    
-def main(args):
-    global PORT, DISCONNECT_MESSAGE, FORMAT
+                    while True:
+                        conn, addr = s.accept()
+                        print(f'Conexión establecida desde {addr}')
+                        logger(f'Conexión establecida desde {addr}')
+
+                        access = semaphore.acquire(blocking=False)
+                        logger(f"Acceso denegado a permitido: {access}")
+                        threading.Thread(target=handle_client, args=(conn, addr, access)).start()
+
+                except socket.error as e:
+                    print(f"Error al crear socket {e}")
+                    logger(f"Error al crear socket {e}")
+                    break
+
+        except socket.gaierror:
+            continue
+
+    if not s:
+        print('No se pudo encontrar una dirección adecuada')
+        logger('No se pudo encontrar una dirección adecuada')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Servidor de red con soporte para IPv4 e IPv6')
+    parser.add_argument('--x', type=int, default=8080, help='Numero de puerto (default: 8080)')
+    parser.add_argument('--y', type=str, default="Desconectado", help='Mensaje de desconexión (default: "Desconectado")')
+    parser.add_argument('--z',type=str,default='utf-8',help='Formato de codificacion')
+    args = parser.parse_args()
+
+    #PORT = str(args.port)
+    HEADER = 64
     PORT = args.x
-    DISCONNECT_MESSAGE = args.y
     FORMAT = args.z
-    start_server()
 
-main(args)
+    try:
+        start_server()
+    except KeyboardInterrupt:
+        print("Servidor cerrando...")
+        logger("Servidor cerrando...")
+
 

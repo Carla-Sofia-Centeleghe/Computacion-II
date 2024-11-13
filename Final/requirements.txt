@@ -1,15 +1,14 @@
-flask
+# Inistalar paketes necesarios en un entorno virtual
 celery
 redis
-#tkinter
+tkinter 
 #Python 3.11 
-#tensorFlow
+tensorFlow
 matplotlib
 numpy
 requests
 scipy
 ramdom 
-#zipfile
 pillow
 pytz
-cv2
+opencv-python

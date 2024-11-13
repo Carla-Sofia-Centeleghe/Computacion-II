@@ -1,12 +1,10 @@
 source venv/bin/activate # Activar entorno virtual
 
-redis-server # Activar server
-
 celery -A celery_app worker --loglevel=info # Activo todo desde back
 
-python main.py # Iniciar el servidor 
+python server_definitivo.py # Iniciar el servidor 
 
-python tkinter_app.py # Inicia la interfaz
+python cliente_IPV.py # Inicia el cliente
 
 redis-cli lrange logs 0 -1 # Listará todos los logs almacenados en Redis
 

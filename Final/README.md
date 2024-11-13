@@ -1,23 +1,26 @@
-Computacion 2 FINAL
+# Computación 2 FINAL
 
-#Carla S. Centeleghe
-#Detector de Comidas
+## Carla S. Centeleghe
+## Detector de Comidas
 
-Descripción del Proyecto:
+### Descripción del Proyecto
 
-El proyecto consiste en una aplicación que permite a los clientes subir imágenes de comidas (carne o pizza) y el servidor responderá cual comida es.La aplicación utiliza una red neuronal de clasificación convuncional para distinguir entre carne y pizza.La arquitectura del proyecto es cliente-servidor e incluye el uso de sockets, mecanismos de IPC, tareas distribuidas con celery, intefaz, procesamiento de imagenes y guarda logs en redis (avisa de los mismos se guardaron)
+El proyecto consiste en una aplicación que permite a los clientes subir imágenes de comidas (carne o pizza) y el servidor responderá cuál comida es. La aplicación utiliza una red neuronal de clasificación convolucional para distinguir entre carne y pizza. La arquitectura del proyecto es cliente-servidor e incluye el uso de sockets, mecanismos de IPC, manejo de multiprogramacion, tareas distribuidas con Celery, procesamiento de imágenes y guarda logs en Redis.
 
-Funcionalidades:
-- Cliente-Servidor: Los clientes se conectan al servidor utilizando sockets para enviar imágenes y recibir resultados.
+### Funcionalidades
 
-- Clasificación de Imágenes: El servidor utiliza una red neuronal para clasificar las imágenes y determinar cual es.
+- **Cliente-Servidor**: Para que el cliente se conecte al servidor debe autentificarse.
 
-- Colas de Tareas Distribuidas: Se utiliza Celery para paralelizar la tarea de clasificación de imágenes.
+- **Base de datos**: Los datos de ID y hora se guardan en la base de datos.
 
-- Compatibilidad con IPv4 e IPv6: El servidor maneja direcciones tanto IPv4 como IPv6.
+- **Cliente-Servidor**: Los clientes se conectan al servidor utilizando sockets para enviar imágenes y recibir resultados.
 
-- Interfaz de Usuario: La aplicación incluye una interfaz la cual es par a la carga de imagenes y obtener su respuesta.
+- **Clasificación de Imágenes**: El servidor utiliza una red neuronal para clasificar las imágenes y determinar si son carne o pizza.
 
-- Guadado de logs: los logs de todo se almacenan automatica mente en Redis, ademas se envia un mensaje al servidor. 
+- **Colas de Tareas Distribuidas**: Se utiliza Celery para paralelizar la tarea de clasificación de imágenes, permitiendo que las tareas se ejecuten en segundo plano y mejorando la eficiencia del sistema.
+
+- **Compatibilidad con IPv4 e IPv6**: El servidor maneja direcciones tanto IPv4 como IPv6, asegurando compatibilidad con diferentes tipos de redes.
+
+- **Guardado de Logs**: Los logs de todas las operaciones se almacenan automáticamente en Redis. Además, lo administra celery como tarea secundaria.
 
 

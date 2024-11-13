@@ -2,12 +2,12 @@ import socket
 import argparse
 from multiprocessing import Queue
 from autentificacion import main_log_process
-from PIL import Image
-import io
+#from PIL import Image
+#import io
 import os
 
 try:
-    # Intenta importar tkinter para usar el cuadro de diálogo
+    # Importar tkinter para usar el cuadro de diálogo
     import tkinter as tk
     from tkinter import filedialog
     tkinter_available = True
@@ -41,8 +41,8 @@ def main(args):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Creamos un socket para la conexión
         try:
             client.connect(ADDR)                                   # Conectamos el cliente al servidor
-            print(f"Intentando conectar a {ADDR}")
-            client.settimeout(5)  # Establecer un tiempo de espera para la conexión
+            print(f"Conectado a {ADDR}")
+            client.settimeout(100)  # Establece el tiempo de espera a 30 segundos
             connected = True
             while connected:
                 if tkinter_available:
@@ -52,13 +52,18 @@ def main(args):
                     root.destroy()
                 else:
                     filepath = input("Ingrese el nombre o la ruta completa de la foto: ")
+                    if not filepath:
+                        print("Ya que no quieres identificar mas imagenes, se cierra el visor. Cerrando...")
+                        print('Nos vemos, adios!')
+                        client.close()
+                        break
 
-                if not filepath or not os.path.isfile(filepath):
-                    print("La imagen no se encontró. Intente nuevamente.")
-                    continue
+                    if not os.path.isfile(filepath):
+                        print("La imagen no se encontró. Intente nuevamente.")
+                        continue
 
                 # Enviar tipo de mensaje "I" para indicar que es un mensaje de imagen
-                #client.send("I".encode(FORMAT))
+                client.send("I".encode(FORMAT))
 
                 # Enviar la longitud de la ruta del archivo
                 filepath_encoded = filepath.encode(FORMAT)
@@ -72,6 +77,7 @@ def main(args):
 
                 # Esperar la respuesta del servidor
                 server_msj = client.recv(HEADER).decode(FORMAT)
+                client.settimeout(120)  # Establece el tiempo de espera a 120 segundos
                 print(f"Clasificación recibida del servidor: {server_msj}")
 
                 if server_msj == 'Disconnect capacity':
@@ -82,12 +88,14 @@ def main(args):
                     print('Nos vemos, adios!')
                     client.close()
                     break
-
+            
+        
         except ConnectionRefusedError as e:
             print(f"Error de conexión rechazada: {str(e)}")
-            print(f"Intentando conectar a {ADDR}")
+            print(f"Conectando a {ADDR}")
         except socket.timeout:
             print("La conexión ha expirado. Verifique si el servidor está funcionando.")
+            client.close()
         finally:
             client.close()
     else:
