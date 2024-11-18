@@ -12,12 +12,10 @@ result_queue = Queue()
 logger = log 
 
 # Configuración inicial
-semaphore = threading.Semaphore(2)  # Limitar el número máximo de conexiones simultáneas
 SERVER = socket.gethostbyname(socket.gethostname())
 DISCONNECT_MESSAGE = b"disconnect"
 
-
-def handle_client(conn, addr, access):
+def handle_client(conn, addr):
     connected = True
     id_con = uuid.uuid1().int
     id_con /= 1000000
@@ -29,13 +27,7 @@ def handle_client(conn, addr, access):
             if msg_type == DISCONNECT_MESSAGE.decode(FORMAT):
                 conn.send(b"Disconnect".encode(FORMAT))
                 conn.close()
-                semaphore.release()         # Libera el semaforo para permitir otra conexion
                 connected = False
-                break
-            
-            if access == False:
-                conn.send(f"Disconnect capacity".encode(FORMAT))
-                conn.close()
                 break
             
             print(f"Usuario {addr} dice {msg_type}")
@@ -99,9 +91,7 @@ def start_server():
                         print(f'Conexión establecida desde {addr}')
                         logger(f'Conexión establecida desde {addr}')
 
-                        access = semaphore.acquire(blocking=False)
-                        logger(f"Acceso denegado a permitido: {access}")
-                        threading.Thread(target=handle_client, args=(conn, addr, access)).start()
+                        threading.Thread(target=handle_client, args=(conn, addr)).start()
 
                 except socket.error as e:
                     print(f"Error al crear socket {e}")

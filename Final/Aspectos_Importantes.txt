@@ -1,20 +1,14 @@
 Aspectos importantes de programacion concurrente y de red:
 
-1. **Manejo de sincronización**:
-   - Utilizo un semáforo (`threading.Semaphore`) para limitar el número máximo de conexiones simultáneas que el servidor puede manejar. Esto es una forma de sincronización para controlar el acceso a un recurso compartido.
 
-   ```python
-   semaphore = threading.Semaphore(2)  # Limitar el número máximo de conexiones simultáneas
-   ```
-
-2. **Manejo de multiprogramación**:
+1. **Manejo de multiprogramación**:
    - Utilizo hilos (`threading.Thread`) para manejar múltiples conexiones de clientes de manera concurrente. Esto permite que el servidor maneje varias conexiones al mismo tiempo.
 
    ```python
    threading.Thread(target=handle_client, args=(conn, addr, semaphore)).start()
    ```
 
-3. **Manejo de IPC (Inter-Process Communication)**:
+2. **Manejo de IPC (Inter-Process Communication)**:
    - Utilizo una cola (`multiprocessing.Queue`) para la comunicación entre procesos. Esto permite que diferentes partes del programa se comuniquen entre sí de manera eficiente.
 
    ```python
@@ -22,7 +16,7 @@ Aspectos importantes de programacion concurrente y de red:
    result_queue = Queue()
    ```
 
-4. **Manejo de IPv4 e IPv6**:
+3. **Manejo de IPv4 e IPv6**:
    - Mi servidor está configurado para manejar tanto conexiones IPv4 como IPv6 utilizando 
 
 socket.getaddrinfo
@@ -52,7 +46,7 @@ socket.AF_UNSPEC
            s.close()
    ```
 
-5. **Comunicación entre procesos**:
+4. **Comunicación entre procesos**:
    - Utilizo Celery para manejar tareas en segundo plano, lo cual es una forma de comunicación entre procesos. Celery permite que las tareas se ejecuten en procesos separados y se comuniquen con el proceso principal.
 
    ```python
@@ -65,7 +59,7 @@ socket.AF_UNSPEC
 
 Mi programa implementa varios conceptos de programación concurrente y de red, incluyendo:
 
-- **Sincronización**: Control del acceso a recursos compartidos mediante semáforos.
+- **Concurente**: El sever puede manejar la mayor cantidad de padidos simultaneos.
 - **Multiprogramación**: Manejo de múltiples conexiones de clientes utilizando hilos.
 - **IPC (Inter-Process Communication)**: Comunicación entre procesos utilizando colas y Celery.
 - **IPv4 e IPv6**: Soporte para conexiones tanto IPv4 como IPv6.
